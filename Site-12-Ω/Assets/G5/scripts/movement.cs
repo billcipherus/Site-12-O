@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-    [SerializeField] CharacterController cC;
+    [SerializeField] Rigidbody rb;
     [SerializeField] float normalSpeed = 5f;
     [SerializeField] float gravity = 50f;
     [SerializeField] float jumpForce = 40f;
@@ -13,34 +13,42 @@ public class PlayerController : MonoBehaviour
     [SerializeField] float stamina = 100f;
     [SerializeField] TextMeshProUGUI tMP1;
     [SerializeField] TextMeshProUGUI tMP2;
+    [SerializeField] Collider groundCheckCollider; // Новое поле для триггера-детектора
+
     bool running = false;
+    bool isGrounded = false;
+    private Vector3 moveDirection;
 
-    private Vector3 direction;
-
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         currentSpeed = normalSpeed;
+        if (rb == null)
+            rb = GetComponent<Rigidbody>();
+
+        rb.freezeRotation = true;
+        rb.useGravity = false; // Наша гравитация
     }
 
-    // Update is called once per frame
     void Update()
     {
         Running();
+
+        // Получаем ввод (как в оригинальном коде)
         float mH = Input.GetAxis("Horizontal");
         float mV = Input.GetAxis("Vertical");
-        if (cC.isGrounded)
-        {
-            direction = new Vector3(mH, 0, mV);
-            direction = transform.TransformDirection(direction) * currentSpeed;
-            if (Input.GetKey(KeyCode.Space))
-            {
-                direction.y = jumpForce;
-            }
-        }
-        direction.y -= gravity * Time.deltaTime;
-        cC.Move(direction * Time.deltaTime);
 
+        // Рассчитываем направление движения (как в оригинальном коде)
+        moveDirection = new Vector3(mH, 0, mV);
+        moveDirection = transform.TransformDirection(moveDirection);
+
+        // Прыжок
+        if (isGrounded && Input.GetKeyDown(KeyCode.Space))
+        {
+            rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+            isGrounded = false;
+        }
+
+        // Поворот камеры (твой оригинальный код)
         Cursor.lockState = CursorLockMode.Locked;
         float rX = Input.GetAxis("Mouse X") * mouseSense;
         float rY = Input.GetAxis("Mouse Y") * mouseSense;
@@ -50,46 +58,77 @@ public class PlayerController : MonoBehaviour
         rP.y += rX;
         transform.rotation = Quaternion.Euler(rP);
 
+        // Логика стамины и скорости (твой оригинальный код)
         if (stamina < 0)
         {
             running = false;
             stamina = 0;
         }
 
-        if (stamina > 100)
-        {
-            stamina = 100;
-        }
-        if (currentSpeed < normalSpeed)
-        {
-            currentSpeed = normalSpeed;
-        }
-        else if (currentSpeed > maxSpeed)
-        {
-            currentSpeed = maxSpeed;
-        }
+        if (stamina > 100) stamina = 100;
 
-        if (running == true)
+        if (currentSpeed < normalSpeed) currentSpeed = normalSpeed;
+        else if (currentSpeed > maxSpeed) currentSpeed = maxSpeed;
+
+        if (running)
         {
             currentSpeed += normalSpeed * Time.deltaTime;
             stamina -= normalSpeed * Time.deltaTime * 5;
         }
-        else if (running == false)
+        else
         {
             currentSpeed -= normalSpeed * Time.deltaTime;
             stamina += normalSpeed * Time.deltaTime;
         }
 
-        tMP1.text = stamina.ToString();
-        tMP2.text = currentSpeed.ToString();
+        tMP1.text = stamina.ToString("F0");
+        tMP2.text = currentSpeed.ToString("F1");
+    }
 
+    void FixedUpdate()
+    {
+        // ПРИМЕНЯЕМ ДВИЖЕНИЕ ТОЛЬКО НА ЗЕМЛЕ
+        if (isGrounded)
+        {
+            Vector3 horizontalMove = moveDirection * currentSpeed;
+            // Сохраняем вертикальную скорость для прыжка/падения
+            rb.linearVelocity = new Vector3(horizontalMove.x, rb.linearVelocity.y, horizontalMove.z);
+        }
+
+        // ВСЕГДА применяем гравитацию
+        rb.AddForce(Vector3.down * gravity * rb.mass);
     }
 
     void Running()
     {
-        if (Input.GetKeyDown(KeyCode.LeftShift) && cC.isGrounded)
+        if (Input.GetKeyDown(KeyCode.LeftShift) && isGrounded)
         {
             running = !running;
+        }
+    }
+
+    // Триггер для определения земли
+    void OnCollisionStay(Collision collision)
+    {
+        if (collision.gameObject.CompareTag("Ground"))
+        {
+            isGrounded = true;
+        }
+    }
+
+    void OnCollisionExit(Collision collision)
+    {
+        if (collision.gameObject.CompareTag("Ground"))
+        {
+            isGrounded = false;
+        }
+    }
+
+    void OnCollisionEnter(Collision collision)
+    {
+        if (collision.gameObject.CompareTag("Ground"))
+        {
+            isGrounded = true;
         }
     }
 }
