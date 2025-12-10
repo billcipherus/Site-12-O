@@ -42,10 +42,11 @@ public class PlayerController : MonoBehaviour
         moveDirection = transform.TransformDirection(moveDirection);
 
         // Прыжок
-        if (isGrounded && Input.GetKeyDown(KeyCode.Space))
+        if (isGrounded && Input.GetKeyDown(KeyCode.Space) && stamina >= 10)
         {
             rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
             isGrounded = false;
+            stamina -= 10;
         }
 
         // Поворот камеры (твой оригинальный код)
@@ -101,7 +102,7 @@ public class PlayerController : MonoBehaviour
 
     void Running()
     {
-        if (Input.GetKeyDown(KeyCode.LeftShift) && isGrounded)
+        if (Input.GetKeyDown(KeyCode.LeftShift) && isGrounded && stamina >= 10)
         {
             running = !running;
         }
