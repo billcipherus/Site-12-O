@@ -36,6 +36,21 @@ public class PlayerController : MonoBehaviour
         // Получаем ввод (как в оригинальном коде)
         float mH = Input.GetAxis("Horizontal");
         float mV = Input.GetAxis("Vertical");
+        if (mH != 0f || mV != 0f)
+        {
+            Debug.Log(54);
+            GetComponent<AudioSource>().volume = 1f;
+
+        }
+        else if (mH == 0f && mV == 0f)
+        {
+            print(mH == 0f && mV == 0f);
+            Debug.Log(123);
+            //GetComponent<AudioSource>().Play();
+            GetComponent<AudioSource>().volume = 0f;
+
+        }
+
 
         // Рассчитываем направление движения (как в оригинальном коде)
         moveDirection = new Vector3(mH, 0, mV);
