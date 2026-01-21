@@ -16,7 +16,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] Collider groundCheckCollider; // Новое поле для триггера-детектора
 
     bool running = false;
-    bool isGrounded = false;
+    [SerializeField]  bool isGrounded = false;
     private Vector3 moveDirection;
 
     void Start()
